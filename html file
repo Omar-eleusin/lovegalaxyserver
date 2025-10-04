@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang=kz>
+<head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Махаббат Галактикасы</title>
+<style>
+/* 1. Жалпы стильдер */
+body,html{margin:0;height:100%;background:#000;overflow:hidden}
+canvas{display:block}
+
+/* 2. Анимация алдындағы экран (Overlay) */
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent; 
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    z-index: 9999;
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    transition: opacity 1.5s ease;
+}
+
+/* 3. Видео фон стилі (өзгеріссіз) */
+#video-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+    opacity: 1; 
+}
+
+/* 4. Бірінші беттегі мәтін және батырма стилі */
+#message {
+    font-size: 2.8em;
+    font-weight: 600;
+    color: white; 
+    text-shadow: 0 0 15px #000, 0 0 5px #000; 
+    margin-bottom: 40px;
+    padding: 10px;
+    background-color: transparent; 
+    border-radius: 10px;
+}
+
+/* "Жалғастыру" батырмасы */
+#continue-btn {
+    padding: 18px 40px;
+    font-size: 1.6em;
+    font-weight: bold;
+    color: #000; 
+    background: rgba(255, 255, 255, 0.7); 
+    border: 3px solid #000; 
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7); 
+    transition: transform 0.4s, box-shadow 0.4s, background-color 0.4s;
+    animation: simple-pulse 1.5s infinite alternate; 
+}
+
+#continue-btn:hover {
+    transform: scale(1.05);
+    background-color: #000; 
+    color: #fff;
+    box-shadow: 0 0 20px #fff;
+}
+
+@keyframes simple-pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.02); }
+}
+
+/* 5. Екінші беттегі Модальды терезе стилі */
+#question-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 999;
+    /* Мөлдір қара фон (0.5) */
+    background-color: rgba(0, 0, 0, 0.5); 
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.5); 
+    color: white;
+    text-align: center;
+    max-width: 90%;
+    transition: opacity 0.5s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(5px); 
+}
+
+#question-modal p {
+    font-size: 1.8em; 
+    margin-bottom: 30px;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 10px #000;
+}
+
+.modal-buttons button {
+    padding: 15px 35px;
+    margin: 0 15px;
+    font-size: 1.3em;
+    font-weight: bold;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, color 0.3s, box-shadow 0.3s;
+}
+
+/* "ИӘ" батырмасы (Мөлдір ақ фон, қара мәтін) */
+#yes-btn {
+    background-color: rgba(255, 255, 255, 0.7); 
+    color: #000;
+    border: 2px solid #000;
+}
+/* "ЖОҚ" батырмасы (Мөлдір қара фон, ақ мәтін) */
+#no-btn {
+    background-color: rgba(0, 0, 0, 0.7); 
+    color: #fff;
+    border: 2px solid #fff;
+}
+.modal-buttons button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.9);
+}
+#yes-btn:hover {
+    background-color: #fff; 
+}
+#no-btn:hover {
+    background-color: #000; 
+}
+
+/* 6. Авторлық белгі стилі */
+#creator-info {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5); 
+    text-shadow: 0 0 5px #000;
+    z-index: 10000;
+}
+
+</style>
+</head>
+<body>
+
+<div id="overlay">
+    <video id="video-background" autoplay loop muted playsinline>
+        <source src="https://www.dropbox.com/scl/fi/vf2154hi06l1gkdlm60n6/VID_20251004_110157_525.mp4?rlkey=p8wyhkyqwvl71hyfotn7yl38c&st=97kzyx43&raw=1" type="video/mp4">
+        Браузеріңіз видеоны қолдамайды.
+    </video>
+    <div id="message">Мен саған көптен бері айтқым келіп жүрген...</div>
+    <button id="continue-btn">Жалғастыру</button>
+</div>
+
+<canvas id=c></canvas>
+
+<div id="question-modal" style="display: none;">
+    <p>Сен маған ұнайсың, жақынырақ таныссақ, сөйлессек қалай қарайсың? Келісесің бе?</p>
+    <div class="modal-buttons">
+        <button id="yes-btn">ИӘ</button>
+        <button id="no-btn">ЖОҚ</button>
+    </div>
+</div>
+
+<div id="creator-info">Coded by Eleusin Omar</div>
+
+<audio id=audio loop>
+<source src="https://www.dropbox.com/scl/fi/6jetbtyi9kfjt4w3qvz5c/gqsb53wocj4yzamyqu8b-2.mp3?rlkey=mm1s5ogpver6xmgmpkjqc1zkf&st=3pu5mej1&raw=1" type=audio/mpeg>
+</audio>
+
+<script src=https://cdn.jsdelivr.net/npm/three@0.148.0/build/three.min.js></script>
+<script>
+const audio = document.getElementById("audio");
+const overlay = document.getElementById("overlay");
+const continueBtn = document.getElementById("continue-btn");
+const questionModal = document.getElementById("question-modal");
+const yesBtn = document.getElementById("yes-btn");
+
+// -------------------------------------------------------------------------
+// ✅ БАСТЫ ӨЗГЕРІС: API МЕКЕНЖАЙЫ ЖӘНЕ ЖІБЕРУ ЛОГИКАСЫ
+// -------------------------------------------------------------------------
+
+// ⚠️ 1. СЕРВЕР МЕКЕНЖАЙЫ: Бұл жерді Ngrok арқылы алған сілтемеңізге АУЫСТЫРЫҢЫЗ!
+// Мысалы: "https://5f8d-192-168-1-1.ngrok-free.app/log_response"
+const API_ENDPOINT = "https://f217af84ceb3.ngrok-free.app/log_response"; 
+
+function sendResponseToServer(response) {
+    console.log(`Жауап серверге жіберілді: ${response}`);
+    
+    // Жауапты Python серверіне жіберу (ол бұны Telegram-ға жібереді)
+    fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ answer: response, timestamp: new Date().toISOString() })
+    }).catch(error => console.error('Серверге жіберу қатесі:', error));
+}
+
+
+function startGalaxy() {
+    // Енді startGalaxy шақырылғанда, ол міндетті түрде ойнайды, себебі бұл пайдаланушының тікелей әрекетінен кейін
+    audio.play().catch(error => {
+        console.error("Audio playback failed:", error);
+    });
+    
+    // Модальды терезені көрсету
+    questionModal.style.display = 'block';
+    tick(); // Галактика анимациясын бастау
+}
+
+// 1. "Жалғастыру" батырмасын басқанда:
+continueBtn.addEventListener("click", () => {
+    const video = document.getElementById("video-background");
+    video.pause();
+
+    overlay.style.opacity = '0';
+    setTimeout(() => {
+        overlay.style.display = 'none';
+        startGalaxy(); // Музыка осы жерде іске қосылады
+    }, 1500); 
+});
+
+// 2. "ИӘ" батырмасын басқанда:
+yesBtn.addEventListener("click", () => {
+    // ТЕЛЕГРАМ-ҒА ЖАУАП ЖІБЕРУ
+    sendResponseToServer("ИӘ"); 
+
+    questionModal.style.opacity = '0';
+    setTimeout(() => {
+        questionModal.style.display = 'none';
+    }, 500);
+
+    // Пайдаланушыны WhatsApp-қа бағыттау
+    const phoneNumber = "77753262488"; 
+    const message = "Иә, мен танысуға келісемін! 😊";
+    const whatsappLink = `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+    window.location.href = whatsappLink; 
+});
+
+// 3. "ЖОҚ" батырмасын басқанда:
+document.getElementById("no-btn").addEventListener("click", () => {
+    // ТЕЛЕГРАМ-ҒА ЖАУАП ЖІБЕРУ
+    sendResponseToServer("ЖОҚ"); 
+    
+    questionModal.style.opacity = '0';
+    setTimeout(() => {
+        questionModal.style.display = 'none';
+    }, 500);
+});
+
+// --- Галактика анимациясының коды (Төмендегі код өзгеріссіз) ---
+
+const canvas=document.getElementById("c"),renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:!0});renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2)),renderer.setSize(innerWidth,innerHeight);const scene=new THREE.Scene,camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,5e3);let targetDist=300,currentDist=300,rotX=.2,rotY=0;const loader=new THREE.TextureLoader,nebulaTex=loader.load("https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/cube/space/px.jpg");scene.background=nebulaTex,function(e=2e3,t=3e3){const n=new THREE.BufferGeometry,a=new Float32Array(3*e);for(let n=0;n<e;n++){const e=t*(.3+.7*Math.random()),r=Math.random()*Math.PI*2,i=Math.acos(2*Math.random()-1);a[3*n+0]=e*Math.sin(i)*Math.cos(r),a[3*n+1]=e*Math.cos(i),a[3*n+2]=e*Math.sin(i)*Math.sin(r)}n.setAttribute("position",new THREE.BufferAttribute(a,3)),scene.add(new THREE.Points(n,new THREE.PointsMaterial({size:1.5,color:16777215,depthWrite:!1})))}();const coreMat=new THREE.MeshPhongMaterial({color:1118481,transparent:!0,opacity:.6,shininess:200}),core=new THREE.Mesh(new THREE.SphereGeometry(40,64,64),coreMat);
+
+// Галактика ортасындағы мәтін: "СЕНІ СҮЙЕМІН"
+function makeCenterTextTexture(e){const t=document.createElement("canvas");t.width=512,t.height=512;const n=t.getContext("2d");return n.clearRect(0,0,t.width,t.height),n.font="bold 80px Arial",n.textAlign="center",n.textBaseline="middle",n.fillStyle="#ff0033",n.shadowColor="#ff66aa",n.shadowBlur=50,n.fillText(e,t.width/2,t.height/2),new THREE.CanvasTexture(t)}
+scene.add(core);const centerTex=makeCenterTextTexture("СЕНІ СҮЙЕМІН ❤️"),centerMat=new THREE.SpriteMaterial({map:centerTex,transparent:!0}),centerSprite=new THREE.Sprite(centerMat);
+function makeGlow(e=768,t="255,160,0",n="255,60,0"){const a=document.createElement("canvas");a.width=a.height=e;const r=a.getContext("2d"),i=r.createRadialGradient(e/2,e/2,.05*e,e/2,e/2,.5*e);return i.addColorStop(0,"rgba("+t+",0.9)"),i.addColorStop(.5,"rgba("+n+",0.5)"),i.addColorStop(1,"rgba(0,0,0,0)"),r.fillStyle=i,r.fillRect(0,0,e,e),new THREE.CanvasTexture(a)}centerSprite.scale.set(60,60,1),centerSprite.position.set(0,0,0),centerSprite.renderOrder=999,scene.add(centerSprite);const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:makeGlow(),transparent:!0,depthWrite:!1}));function ringTexture(e=768){const t=document.createElement("canvas");t.width=t.height=e;const n=t.getContext("2d");n.translate(e/2,e/2);const a=.34*e,r=.49*e,i=n.createRadialGradient(0,0,.3*a,0,0,r);return i.addColorStop(0,"rgba(255,255,200,1)"),i.addColorStop(.3,"rgba(255,160,60,0.9)"),i.addColorStop(.65,"rgba(255,80,0,0.6)"),i.addColorStop(1,"rgba(0,0,0,0)"),n.fillStyle=i,n.beginPath(),n.arc(0,0,r,0,2*Math.PI),n.arc(0,0,a,0,2*Math.PI,!0),n.closePath(),n.fill(),new THREE.CanvasTexture(t)}glow.scale.set(500,500,1),scene.add(glow);const ring1=new THREE.Mesh(new THREE.RingGeometry(60,80,128),new THREE.MeshBasicMaterial({map:ringTexture(),transparent:!0,side:THREE.DoubleSide})),ring2=new THREE.Mesh(new THREE.RingGeometry(85,100,128),new THREE.MeshBasicMaterial({map:ringTexture(),transparent:!0,side:THREE.DoubleSide,opacity:.6}));ring1.rotation.x=ring2.rotation.x=Math.PI/2,scene.add(ring1),scene.add(ring2);
+
+// *** Сіздің ӨЗГЕРТІЛГЕН СӨЗДЕР ТІЗІМІҢІЗ ***
+const customWords = [
+    "Менің_Ақылдым", "Менің_Жаным", "Менің_Асылым", "Сен_Кереметсің", 
+    "Сені_Сағындым", "Күнім_менің", "Ай_менің", "Жарығым_менің",
+    "Менің_Нәзігім", "Қымбатты_адамым", "Махаббатым_менің", "Сүйіктім_менің",
+    "Сен_Ғажайыпсың", "Әдемі_Қыз", "Менің_Бақытым", "Мен_Сенікімін",
+    "Бірге_Болайық", "Жүрегім_Сенде", "Мәңгілік_Махаббат", "Сенсіз_Өмір_Жоқ"
+];
+
+const WORDS = [];
+const emojis = ["💖", "✨", "❤️", "🌹", "🌟", "💫", "🔥", "🥰"];
+for(let i = 0; i < 50; i++) { 
+    const wordIndex = i % customWords.length;
+    const emojiIndex = i % emojis.length;
+    WORDS.push(`${emojis[emojiIndex]} ${customWords[wordIndex]}`);
+}
+
+// makeTextTexture функциясы - Мәтіннің сапасы мен көлемін үлкейту
+function makeTextTexture(e,t){
+    const n=document.createElement("canvas");n.width=1024,n.height=256; 
+    const a=n.getContext("2d");return a.clearRect(0,0,n.width,n.height),
+    a.font="bold 80px Arial", 
+    a.textAlign="center",a.textBaseline="middle",a.fillStyle="#fff",a.shadowColor=t,a.shadowBlur=30,a.fillText(e,n.width/2,n.height/2),new THREE.CanvasTexture(n)
+}
+
+const COLORS=["#ff66ff","#66ccff","#ffd36b","#ff9966","#8df59a","#ffa0f8","#c6a7ff","#ff4444","#44ff99","#99ccff"],textGroup=new THREE.Group;scene.add(textGroup);
+for(let e=0;e<WORDS.length;e++){
+    const t=makeTextTexture(WORDS[e],COLORS[e%COLORS.length]),n=new THREE.SpriteMaterial({map:t,transparent:!0}),a=new THREE.Sprite(n);
+    a.scale.set(60, 15, 1); // Масштабты үлкейту
+    const r=Math.acos(2*Math.random()-1),i=Math.random()*Math.PI*2,o=150+120*Math.random();
+    a.position.set(o*Math.sin(r)*Math.cos(i),o*Math.cos(r),o*Math.sin(r)*Math.sin(i)),a.userData={phi:r,theta:i,radius:o,speed:.001+.001*Math.random()},textGroup.add(a)
+}
+
+let dragging=!1,lastX=0,lastY=0;function onDown(e){dragging=!0;const t=e.touches?e.touches[0]:e;lastX=t.clientX,lastY=t.clientY}function onMove(e){if(!dragging)return;const t=e.touches?e.touches[0]:e,n=(t.clientX-lastX)/innerWidth,a=(t.clientY-lastY)/innerHeight;rotY-=3*n,rotX=Math.max(-1.2,Math.min(1.2,rotX-2.2*a)),lastX=t.clientX,lastY=t.clientY}function onUp(){dragging=!1}addEventListener("mousedown",onDown),addEventListener("mousemove",onMove),addEventListener("mouseup",onUp),addEventListener("touchstart",onDown,{passive:!0}),addEventListener("touchmove",onMove,{passive:!0}),addEventListener("touchend",onUp,{passive:!0}),addEventListener("wheel",(e=>{targetDist+=.25*e.deltaY,targetDist=Math.max(160,Math.min(600,targetDist))}),{passive:!0});let pinch=0;addEventListener("touchmove",(e=>{if(e.touches&&2===e.touches.length){e.preventDefault();const t=e.touches[0].clientX-e.touches[1].clientX,n=e.touches[0].clientY-e.touches[1].clientY,a=Math.hypot(t,n);pinch&&(targetDist+=.5*(pinch-a),targetDist=Math.max(160,Math.min(600,targetDist))),pinch=a}}),{passive:!1}),addEventListener("touchend",(()=>{pinch=0}),{passive:!0});let t=0;
+let animationStarted = false; 
+
+function tick(){
+    if (!animationStarted) {
+        animationStarted = true;
+    }
+    requestAnimationFrame(tick),t+=.01,ring1.rotation.z+=.002,ring2.rotation.z-=.0015,glow.scale.set(500*(1+.03*Math.sin(.4*t)),500*(1+.03*Math.sin(.4*t)),1);const e=1+.05*Math.sin(3*t);core.scale.set(e,e,e),textGroup.children.forEach((e=>{e.material.opacity=.8+.2*Math.sin(2*t),e.userData.theta+=e.userData.speed,e.position.x=e.userData.radius*Math.sin(e.userData.phi)*Math.cos(e.userData.theta),e.position.z=e.userData.radius*Math.sin(e.userData.phi)*Math.sin(e.userData.theta)})),currentDist+=.06*(targetDist-currentDist);const n=Math.cos(rotX),a=Math.sin(rotX),r=Math.cos(rotY),i=Math.sin(rotY);camera.position.set(currentDist*i*n,currentDist*a,currentDist*r*n),camera.lookAt(0,0,0),renderer.render(scene,camera)
+}
+</script>
+</body>
+</html>
